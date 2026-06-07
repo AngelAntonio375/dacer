@@ -1,0 +1,58 @@
+# ─── Entorno virtual ─────────────────────────────────
+venv/
+.venv/
+env/
+
+# ─── Python ──────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# ─── Datos en tiempo de ejecución ────────────────────
+data/incidents.db
+data/.key
+data/*.db
+exports/
+
+# ─── Modelos (descargar con scripts/download_model.py) ─
+models/*.pt
+models/*.onnx
+models/*.engine
+
+# ─── Secretos y configuración local ──────────────────
+.env
+*.env
+secrets.py
+config_local.py
+
+# ─── IDEs ────────────────────────────────────────────
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ─── Sistema operativo ───────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Logs ────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Archivos de prueba temporales ───────────────────
+tests/temp/
+tests/*.mp4
+tests/*.avi
+
+# ─── Archivos pesados ────────────────────────────────
+*.mp4
+*.avi
+*.mkv
+datasets/
