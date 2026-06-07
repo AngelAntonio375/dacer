@@ -45,12 +45,12 @@ Todo el procesamiento ocurre on-premise. No se requiere conexión a internet en 
 
 ### Hardware mínimo
 
-| Componente | Mínimo recomendado |
-|---|---|
-| CPU | Intel Core i5-12400F o equivalente (6 cores) |
-| RAM | 16 GB DDR4 |
+| Componente | Mínimo recomendado                                     |
+|---|--------------------------------------------------------|
+| CPU | AMD Ryzen 5-2600 o equivalente (6 cores)               |
+| RAM | 16 GB DDR4                                             |
 | GPU | NVIDIA GeForce RTX 3060 · 12 GB VRAM (CUDA compatible) |
-| Almacenamiento | SSD 256 GB |
+| Almacenamiento | SSD 256 GB                                             |
 | Cámara | USB (índice 0 o 1) o cámara IP accesible por red local |
 
 > **Nota:** El sistema requiere GPU NVIDIA compatible con CUDA. No existe fallback eficiente a CPU para el motor de inferencia en tiempo real.
@@ -77,7 +77,7 @@ Seguir los pasos en orden desde una máquina limpia:
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/TU_USUARIO/dacer.git
+git clone https://github.com/AngelAntonio375/dacer.git
 cd dacer
 ```
 
@@ -294,7 +294,7 @@ Ver documento técnico (`docs/`) para métricas detalladas, condiciones de medic
 | *(Tercer integrante)* | *(por confirmar)* | *(por confirmar)* |
 
 **Contacto principal:** *(correo del líder)*
-**Repositorio:** https://github.com/TU_USUARIO/dacer
+**Repositorio:** https://github.com/AngelAntonio375/dacer
 **Video de demostración:** *(link por confirmar)*
 
 ---
