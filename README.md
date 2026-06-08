@@ -28,7 +28,7 @@ Sistema de vigilancia inteligente que detecta objetos de interés en flujos de v
 
 ## Descripción general
 
-DaCer procesa el flujo de una cámara IP o USB (1920×1080 @ 30 fps) mediante el modelo YOLOv8n ejecutado sobre GPU NVIDIA. El operador configura desde una interfaz de escritorio (PyQt6) qué clases de objetos vigilar, delimita una zona de interés (ROI) dentro del encuadre y ajusta el umbral de confianza.
+DaCer procesa el flujo de una cámara IP o USB (1920×1080 @ 60 fps) mediante el modelo YOLOv8n ejecutado sobre GPU NVIDIA. El operador configura desde una interfaz de escritorio (PyQt6) qué clases de objetos vigilar, delimita una zona de interés (ROI) dentro del encuadre y ajusta el umbral de confianza.
 
 Cuando una detección persiste durante N fotogramas consecutivos, el sistema:
 - Emite una alerta visual en pantalla.
@@ -116,14 +116,11 @@ La salida debe mostrar `CUDA disponible: True` y el nombre de su GPU.
 
 ## Configuración
 
-Editar el archivo `config.py` en la raíz del proyecto:
+Editar el archivo `main.py` en la raíz del proyecto (el umbral de confianza y objetos se pueden cambiar desde la app):
 
 ```python
 # Índice de la cámara (0 = primera USB, 1 = segunda, o URL rtsp://... para cámara IP)
 CAMERA_INDEX = 1
-
-# Umbral de confianza de detección (0.0 – 1.0)
-CONFIDENCE_THRESHOLD = 0.5
 
 # Número mínimo de fotogramas consecutivos para confirmar una alerta
 MIN_FRAMES_TO_ALERT = 3
@@ -160,7 +157,7 @@ python scripts/download_model.py
 python main.py
 ```
 
-La interfaz de escritorio abre automáticamente. Si la cámara no se detecta, verificar el valor de `CAMERA_INDEX` en `config.py`.
+La interfaz de escritorio abre automáticamente. Si la cámara no se detecta, verificar el valor de `CAMERA_INDEX` en `main.py`.
 
 ---
 
@@ -170,10 +167,9 @@ Una vez abierta la interfaz:
 
 1. **Seleccionar clases activas** — marcar los objetos que se desean vigilar en el panel lateral.
 2. **Definir ROI (zona de interés)** — hacer clic y arrastrar sobre el video para delimitar el área de vigilancia. Dejar vacío para vigilar el encuadre completo.
-3. **Ajustar umbral de confianza** — deslizar el control para modificar la sensibilidad.
-4. **Iniciar vigilancia** — presionar "Iniciar". Las detecciones aparecen anotadas en el video y el log inferior registra los eventos.
-5. **Consultar historial** — pestaña "Incidentes" para ver, filtrar y buscar registros anteriores.
-6. **Exportar reporte PDF** — botón "Exportar PDF" en la pestaña de incidentes; genera un archivo en la carpeta `exports/`.
+3. **Ajustar umbral de confianza** — cambiar el valor del control para modificar la sensibilidad.
+4. **Consultar historial** — pestaña "Incidentes" para ver, filtrar y buscar registros anteriores.
+5. **Exportar reporte PDF** — botón "Exportar PDF" en la pestaña de incidentes; genera un archivo en la carpeta `exports/`.
 
 ---
 
@@ -200,7 +196,6 @@ Ver `tests/README.md` para descripción de cada caso de prueba y datos de muestr
 dacer/
 │
 ├── main.py                  # Punto de entrada de la aplicación
-├── config.py                # Configuración editable por el operador
 ├── requirements.txt         # Dependencias Python con versiones fijadas
 ├── LICENSE                  # Licencia MIT
 ├── README.md                # Este archivo
@@ -208,9 +203,7 @@ dacer/
 │
 ├── src/                     # Código fuente principal
 │   ├── detection/           # Motor de inferencia YOLOv8 (QThread)
-│   ├── alerts/              # Lógica de confirmación de alertas y cooldown
 │   ├── database/            # Acceso a SQLite: escritura, consulta, cifrado
-│   ├── ui/                  # Componentes de la interfaz PyQt6
 │   └── reports/             # Generación de reportes PDF con ReportLab
 │
 ├── tests/                   # Pruebas automatizadas
@@ -287,13 +280,13 @@ Ver documento técnico (`docs/`) para métricas detalladas, condiciones de medic
 
 **TENAXES · Instituto Tecnológico Superior de Irapuato (ITESI) · Irapuato, Guanajuato**
 
-| Nombre | Rol técnico | Correo |
-|---|---|---|
-| Ángel Antonio Ramírez Gutiérrez | *(por confirmar)* | *(por confirmar)* |
-| Nataly Daphne Cervantes Martínez | *(por confirmar)* | *(por confirmar)* |
-| *(Tercer integrante)* | *(por confirmar)* | *(por confirmar)* |
+| Nombre                           |
+|----------------------------------|
+| Nataly Daphne Cervantes Martínez |
+| Vivian Monserrat Moreno Figueroa |
+| Ángel Antonio Ramírez Gutiérrez  |
 
-**Contacto principal:** *(correo del líder)*
+**Contacto principal:** *angelramirez230385@gmail.com*
 **Repositorio:** https://github.com/AngelAntonio375/dacer
 **Video de demostración:** *(link por confirmar)*
 

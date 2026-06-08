@@ -10,7 +10,7 @@ Registro de las principales decisiones de arquitectura y tecnología tomadas dur
 
 **Alternativa descartada:** Correr la inferencia en el hilo principal de PyQt6.
 
-**Razón:** PyQt6 bloquea la interfaz completa mientras el hilo principal está ocupado. Con inferencia a ~30 fps, la UI se congelaría entre cada frame. El patrón QThread permite actualizar el video anotado mediante señales (pyqtSignal) sin bloquear controles ni el log de eventos.
+**Razón:** PyQt6 bloquea la interfaz completa mientras el hilo principal está ocupado. Con inferencia a ~60 fps, la UI se congelaría entre cada frame. El patrón QThread permite actualizar el video anotado mediante señales (pyqtSignal) sin bloquear controles ni el log de eventos.
 
 ---
 
@@ -26,7 +26,7 @@ Registro de las principales decisiones de arquitectura y tecnología tomadas dur
 
 ## 3. SQLite como base de datos local
 
-**Decisión:** Almacenar incidentes en SQLite embebido, sin servidor de base de datos.
+**Decisión:** Almacenar incidentes en SQLite embebido, sin servidor de base de datos (aunque puede usarse para un ambiente de monitoreo remoto o de flujo masivo de datos de millones de incidentes).
 
 **Alternativa descartada:** PostgreSQL o MySQL local.
 
