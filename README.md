@@ -195,16 +195,18 @@ Ver `tests/README.md` para descripción de cada caso de prueba y datos de muestr
 ```
 dacer/
 │
-├── main.py                  # Punto de entrada de la aplicación
+├── main.py                  # Código fuente principal
 ├── requirements.txt         # Dependencias Python con versiones fijadas
 ├── LICENSE                  # Licencia MIT
 ├── README.md                # Este archivo
 ├── CHANGELOG.md             # Registro de cambios por versión
 │
-├── src/                     # Código fuente principal
-│   ├── detection/           # Motor de inferencia YOLOv8 (QThread)
-│   ├── database/            # Acceso a SQLite: escritura, consulta, cifrado
-│   └── reports/             # Generación de reportes PDF con ReportLab
+├── src/                     # Código secundario para tests
+│   ├── __init__.py          # 
+│   ├── crypto.py            # Encriptado   
+│   ├── database.py          # Escritura a base de datos    
+│   ├── pdf_export.py        # Generador de pdf
+│   └── roi_util.py.py       # Utilidad ROI
 │
 ├── tests/                   # Pruebas automatizadas
 │   ├── test_detection.py    # Pruebas del motor de detección
@@ -253,14 +255,18 @@ dacer/
 
 ## Métricas principales
 
-> Métricas medidas sobre hardware: Intel Core i5-12400F · 16 GB DDR4 · NVIDIA RTX 3060 12 GB · SSD NVMe · Windows 11.
+> Métricas medidas sobre hardware: AMD Ryzen 5-2600 · 16 GB DDR4 · NVIDIA RTX 3060 12 GB · SSD NVMe · Windows 11.
 
-| Métrica | Valor |
-|---|---|
-| Inferencia YOLOv8n por frame (p50) | — ms *(pendiente de medición)* |
-| Inferencia YOLOv8n por frame (p95) | — ms |
-| Escritura de incidente en DB | — ms |
-| Generación de reporte PDF | — ms |
+| Métrica                            | Valor    |
+|------------------------------------|----------|
+| Inferencia YOLOv8n por frame (p50) | 16.70 ms |
+| Inferencia YOLOv8n por frame (p95) | 27.20 ms |
+| Escritura de incidente en DB (p50) | 05.50 ms |
+| Escritura de incidente en DB (p95) | 10.60 ms |
+| Generación de reporte PDF    (p50) | 30.50 ms |
+| Generación de reporte PDF    (p95) | 57.27 ms |
+
+> El tiempo de generación de PDF varía según la cantidad de imágenes en el reporte.
 
 Ver documento técnico (`docs/`) para métricas detalladas, condiciones de medición y reporte de pruebas de carga.
 

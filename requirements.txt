@@ -3,7 +3,7 @@
 #
 # IMPORTANTE: PyTorch con CUDA debe instalarse por separado si pip descarga la versión CPU:
 #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-
+--extra-index-url https://download.pytorch.org/whl/cu121
 # ─── Interfaz gráfica ────────────────────────────────
 PyQt6==6.7.0
 
@@ -14,8 +14,8 @@ Pillow==10.3.0
 
 # ─── Inferencia YOLOv8 ───────────────────────────────
 ultralytics==8.2.0
-torch==2.3.0
-torchvision==0.18.0
+torch==2.3.0+cu121
+torchvision==0.18.0+cu121
 
 # ─── Base de datos y cifrado ─────────────────────────
 # sqlite3 viene incluido en Python (stdlib) — no se instala aquí
