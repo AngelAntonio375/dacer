@@ -1,63 +1,30 @@
-# Pruebas automatizadas — DaCer
+# Tests — DaCer
 
-## Cómo correr las pruebas
+## Ejecutar todas las pruebas
 
-### Todas las pruebas
 ```bash
+# Desde la raíz del repositorio, con el entorno virtual activo
 python -m pytest tests/ -v
 ```
 
-### Por módulo
-```bash
-# Motor de detección
-python -m pytest tests/test_detection.py -v
+## Suites disponibles
 
-# Base de datos y cifrado
+| Archivo            | Qué prueba                                              | Requiere GPU | Requiere cámara |
+|--------------------|---------------------------------------------------------|:---:|:---:|
+| `test_database.py` | Inicialización de DB, escritura, lectura, filtros, borrado | No | No |
+| `test_crypto.py`   | Cifrado/descifrado Fernet, persistencia de clave        | No | No |
+| `test_roi.py`      | Lógica de inclusión/exclusión de detecciones por zona   | No | No |
+
+Todas las pruebas son unitarias y corren sin cámara ni GPU. No modifican datos de producción: usan bases de datos y archivos temporales aislados por `pytest` fixtures.
+
+## Correr una suite individual
+
+```bash
 python -m pytest tests/test_database.py -v
-
-# Lógica de alertas y cooldown
-python -m pytest tests/test_alerts.py -v
+python -m pytest tests/test_crypto.py -v
+python -m pytest tests/test_roi.py -v
 ```
-
-### Con reporte de cobertura
-```bash
-pip install pytest-cov
-python -m pytest tests/ --cov=src --cov-report=term-missing
-```
-
----
-
-## Qué prueba cada archivo
-
-### test_detection.py
-- El motor de inferencia carga el modelo YOLOv8n correctamente.
-- La detección devuelve resultados para un frame de prueba conocido.
-- El filtro por ROI descarta detecciones fuera del área definida.
-- El umbral de confianza filtra detecciones por debajo del límite configurado.
-- Solo las clases activas en config producen detecciones.
-
-### test_database.py
-- Un incidente se escribe correctamente en SQLite.
-- La imagen se almacena cifrada (el blob en DB no es legible como imagen directa).
-- La imagen se descifra correctamente al leerla.
-- La consulta de historial devuelve los registros en orden cronológico.
-- Los filtros de búsqueda por fecha y tipo de objeto funcionan.
-
-### test_alerts.py
-- Una detección en N fotogramas consecutivos genera exactamente una alerta.
-- Una detección de menos de N fotogramas no genera alerta.
-- El cooldown impide registrar una segunda alerta del mismo objeto antes de 30 segundos.
-- Al cambiar las clases activas, el estado de confirmación se reinicia.
-
----
 
 ## Datos de muestra
 
-Los archivos de prueba usan imágenes sintéticas generadas en memoria (numpy arrays).
-No se requiere descargar datasets externos para correr las pruebas.
-
-El modelo `yolov8n.pt` debe estar descargado antes de correr `test_detection.py`.
-Descargarlo con:
-```bash
-python scripts/download_model.py
-```
+No se requieren datos externos. Los tests generan internamente frames sintéticos (arrays NumPy de ceros) para probar el pipeline de cifrado y almacenamiento.

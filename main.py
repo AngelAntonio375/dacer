@@ -4,6 +4,7 @@ import numpy as np
 import sqlite3
 import os
 import time
+import statistics
 from datetime import datetime
 from cryptography.fernet import Fernet
 
@@ -57,6 +58,29 @@ cipher_suite = Fernet(key)
 
 
 # ==========================================
+# MÉTRICAS DE RENDIMIENTO
+# ==========================================
+_metricas_inferencia: list[float] = []   # ms por frame
+_metricas_db: list[float] = []           # ms por escritura en DB
+_metricas_pdf: list[float] = []          # ms por generación de PDF
+
+
+def reporte_metricas() -> str:
+    def stats(nombre, datos):
+        if not datos:
+            return f"{nombre}: sin datos aún"
+        p50 = statistics.median(datos)
+        p95 = sorted(datos)[int(len(datos) * 0.95)] if len(datos) >= 20 else max(datos)
+        return (f"{nombre}\n"
+                f"    p50: {p50:.1f} ms  |  p95: {p95:.1f} ms  |  n={len(datos)}")
+    return "\n\n".join([
+        stats("Inferencia YOLOv8n por frame", _metricas_inferencia),
+        stats("Escritura de incidente en DB", _metricas_db),
+        stats("Generación de reporte PDF",    _metricas_pdf),
+    ])
+
+
+# ==========================================
 # GESTIÓN DE BASE DE DATOS
 # ==========================================
 def init_db():
@@ -71,6 +95,7 @@ def init_db():
 
 def guardar_incidente_db(objeto, frame):
     try:
+        t0 = time.perf_counter()
         _, buffer = cv2.imencode('.jpg', frame)
         img_encriptada = cipher_suite.encrypt(buffer.tobytes())
         conn = sqlite3.connect("incidentes.db")
@@ -79,6 +104,7 @@ def guardar_incidente_db(objeto, frame):
                        (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), objeto, img_encriptada))
         conn.commit()
         conn.close()
+        _metricas_db.append((time.perf_counter() - t0) * 1000)
     except Exception:
         pass
 
@@ -161,7 +187,6 @@ class VideoThread(QThread):
         self.umbral_confianza = UMBRAL_CONFIANZA
 
         # ROI en coordenadas normalizadas [x1, y1, x2, y2] (0.0 – 1.0)
-        # None = sin restricción de zona
         self.roi_norm = None
 
         # Cooldown: guarda el timestamp del último registro por objeto
@@ -178,8 +203,6 @@ class VideoThread(QThread):
         self.roi_norm = roi_norm
 
     def _puede_guardar(self, label: str) -> bool:
-        """Devuelve True solo si pasaron COOLDOWN_SEGUNDOS desde el último
-        registro del mismo tipo de objeto. Actualiza el timestamp si procede."""
         ahora = time.time()
         if ahora - self._ultimo_guardado.get(label, 0) >= COOLDOWN_SEGUNDOS:
             self._ultimo_guardado[label] = ahora
@@ -187,7 +210,6 @@ class VideoThread(QThread):
         return False
 
     def _box_en_roi(self, box_xyxy, frame_w, frame_h):
-        """Devuelve True si el centro del bounding box está dentro del ROI."""
         if self.roi_norm is None:
             return True
         x1r, y1r, x2r, y2r = self.roi_norm
@@ -213,8 +235,14 @@ class VideoThread(QThread):
                     break
 
                 fh, fw = frame.shape[:2]
-                results = self.model(frame, stream=True, device=0,
-                                     conf=self.umbral_confianza, verbose=False)
+
+                # ── Medir inferencia ──────────────────────────────────────
+                t0 = time.perf_counter()
+                results = list(self.model(frame, stream=True, device=0,
+                                          conf=self.umbral_confianza, verbose=False))
+                _metricas_inferencia.append((time.perf_counter() - t0) * 1000)
+                # ─────────────────────────────────────────────────────────
+
                 hay_amenaza = False
                 label_obj = ""
                 annotated_frame = frame.copy()
@@ -292,6 +320,7 @@ class SurveillanceDashboard(QMainWindow):
             QFrame#LogFrame { border: 1px solid #3d3d3d; background-color: #252525; }
             QPushButton#BtnStop { background-color: #d32f2f; color: white; font-weight: bold; border-radius: 5px; padding: 10px; }
             QPushButton#BtnHistory { background-color: #0078d7; color: white; font-weight: bold; border-radius: 5px; padding: 10px; }
+            QPushButton#BtnMetrics { background-color: #6a1b9a; color: white; font-weight: bold; border-radius: 5px; padding: 10px; }
             QPushButton#BtnRoi { background-color: #2e7d32; color: white; font-weight: bold; border-radius: 5px; padding: 10px; }
             QPushButton#BtnRoiActive { background-color: #f9a825; color: #1e1e1e; font-weight: bold; border-radius: 5px; padding: 10px; }
             QPushButton#BtnClearRoi { background-color: #4a4a4a; color: white; font-weight: bold; border-radius: 5px; padding: 8px; }
@@ -336,6 +365,11 @@ class SurveillanceDashboard(QMainWindow):
         btn_history.clicked.connect(self.mostrar_historial)
         header_layout.addWidget(btn_history, stretch=1)
 
+        btn_metrics = QPushButton("📊 VER MÉTRICAS")
+        btn_metrics.setObjectName("BtnMetrics")
+        btn_metrics.clicked.connect(self.mostrar_metricas)
+        header_layout.addWidget(btn_metrics, stretch=1)
+
         btn_stop = QPushButton("DETENER SISTEMA")
         btn_stop.setObjectName("BtnStop")
         btn_stop.clicked.connect(self.close_application)
@@ -373,7 +407,7 @@ class SurveillanceDashboard(QMainWindow):
         self.lbl_gpu_info.setStyleSheet("color: #4caf50;")
         sidebar_layout.addWidget(self.lbl_gpu_info)
 
-        self.lbl_cam_info = QLabel(f"Res: {ANCHO_CAM}x{ALTO_CAM} @ 30fps")
+        self.lbl_cam_info = QLabel(f"Res: {ANCHO_CAM}x{ALTO_CAM} @ 60fps")
         sidebar_layout.addWidget(self.lbl_cam_info)
 
         self._add_separator(sidebar_layout)
@@ -466,10 +500,9 @@ class SurveillanceDashboard(QMainWindow):
         else:
             self.btn_roi.setObjectName("BtnRoi")
             self.btn_roi.setText("✏  DIBUJAR ZONA")
-        self.btn_roi.setStyle(self.btn_roi.style())  # fuerza refresco del estilo
+        self.btn_roi.setStyle(self.btn_roi.style())
 
     def on_roi_drawn(self, q_rect):
-        """Convierte el QRect del widget a coordenadas normalizadas del frame."""
         self._roi_mode_active = False
         self.btn_roi.setObjectName("BtnRoi")
         self.btn_roi.setText("✏  DIBUJAR ZONA")
@@ -479,14 +512,12 @@ class SurveillanceDashboard(QMainWindow):
             self.thread.actualizar_roi(None)
             return
 
-        # El pixmap está centrado con KeepAspectRatio; hay que mapear correctamente
         pm = self.lbl_video.pixmap()
         lw, lh = self.lbl_video.width(), self.lbl_video.height()
         pw, ph = pm.width(), pm.height()
         off_x = (lw - pw) // 2
         off_y = (lh - ph) // 2
 
-        # Coordenadas relativas al pixmap
         rx1 = max(0, q_rect.left() - off_x) / pw
         ry1 = max(0, q_rect.top() - off_y) / ph
         rx2 = min(pw, q_rect.right() - off_x) / pw
@@ -560,6 +591,9 @@ class SurveillanceDashboard(QMainWindow):
         self.win_history = HistoryWindow()
         self.win_history.show()
 
+    def mostrar_metricas(self):
+        QMessageBox.information(self, "📊 Métricas de Rendimiento", reporte_metricas())
+
     def close_application(self):
         if hasattr(self, 'thread'):
             self.thread.stop()
@@ -576,6 +610,8 @@ class SurveillanceDashboard(QMainWindow):
 # ==========================================
 def exportar_reporte_pdf(filtro: str = "") -> str:
     """Genera un PDF con los incidentes de la DB y devuelve la ruta del archivo."""
+    t0 = time.perf_counter()
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     ruta = f"reporte_incidentes_{timestamp}.pdf"
 
@@ -585,7 +621,6 @@ def exportar_reporte_pdf(filtro: str = "") -> str:
     styles = getSampleStyleSheet()
     story = []
 
-    # Estilos personalizados
     titulo_style = ParagraphStyle('titulo', parent=styles['Title'],
                                   fontSize=20, spaceAfter=6,
                                   textColor=colors.HexColor('#1a237e'))
@@ -594,20 +629,17 @@ def exportar_reporte_pdf(filtro: str = "") -> str:
     info_style = ParagraphStyle('info', parent=styles['Normal'],
                                 fontSize=9, textColor=colors.HexColor('#333333'))
 
-    # Encabezado
     story.append(Paragraph("REPORTE DE INCIDENTES DE VIGILANCIA", titulo_style))
     story.append(Paragraph(
         f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}  |  Sistema: DaCer",
         sub_style))
 
-    # Línea separadora (tabla 1-celda con fondo)
     sep = Table([['']], colWidths=[6.5 * inch], rowHeights=[4])
     sep.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, -1),
                               colors.HexColor('#1a237e'))]))
     story.append(sep)
     story.append(Spacer(1, 14))
 
-    # Resumen
     conn = sqlite3.connect("incidentes.db")
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM incidentes")
@@ -642,7 +674,6 @@ def exportar_reporte_pdf(filtro: str = "") -> str:
 
     story.append(Spacer(1, 20))
 
-    # Tabla de incidentes con imágenes
     query = """SELECT id, fecha, objeto, imagen_cifrada FROM incidentes
                WHERE objeto LIKE ? OR fecha LIKE ?
                ORDER BY id DESC"""
@@ -654,7 +685,6 @@ def exportar_reporte_pdf(filtro: str = "") -> str:
     story.append(Spacer(1, 8))
 
     for rec_id, fecha, objeto, img_cifrada in rows:
-        # Fila de datos
         data = [["ID", "Fecha y Hora", "Objeto Detectado"],
                 [str(rec_id), fecha, objeto]]
         t_inc = Table(data, colWidths=[0.6 * inch, 2.2 * inch, 3.7 * inch])
@@ -671,7 +701,6 @@ def exportar_reporte_pdf(filtro: str = "") -> str:
         ]))
         story.append(t_inc)
 
-        # Imagen del incidente
         if img_cifrada:
             try:
                 decrypted = cipher_suite.decrypt(img_cifrada)
@@ -692,6 +721,11 @@ def exportar_reporte_pdf(filtro: str = "") -> str:
         story.append(Spacer(1, 14))
 
     doc.build(story)
+
+    # ── Registrar métrica PDF ─────────────────────────────────────────────
+    _metricas_pdf.append((time.perf_counter() - t0) * 1000)
+    # ─────────────────────────────────────────────────────────────────────
+
     return ruta
 
 
@@ -715,7 +749,6 @@ class HistoryWindow(QWidget):
 
         layout = QVBoxLayout(self)
 
-        # Barra de herramientas
         tool_bar = QHBoxLayout()
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("🔍 Filtrar...")
