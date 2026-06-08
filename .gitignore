@@ -2,6 +2,11 @@
 venv/
 .venv/
 env/
+secret.key
+*.key
+incidentes.db
+*.db
+*.pt
 
 # ─── Python ──────────────────────────────────────────
 __pycache__/
@@ -29,7 +34,6 @@ models/*.engine
 .env
 *.env
 secrets.py
-config_local.py
 
 # ─── IDEs ────────────────────────────────────────────
 .vscode/
