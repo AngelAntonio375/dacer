@@ -272,7 +272,6 @@ Ver documento técnico (`docs/`) para métricas detalladas, condiciones de medic
 - **Clases COCO únicamente:** El sistema detecta objetos de las 80 clases COCO. Objetos fuera de ese conjunto requieren fine-tuning del modelo.
 - **Un stream simultáneo:** Una instancia del sistema gestiona una cámara. Instalaciones con múltiples cámaras requieren múltiples instancias.
 - **GPU NVIDIA obligatoria:** No existe fallback eficiente a CPU para operación en tiempo real.
-- **Sin autenticación de usuario:** Cualquier operador con acceso al equipo puede ver y eliminar incidentes.
 
 ---
 
