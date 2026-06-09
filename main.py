@@ -25,11 +25,13 @@ import tempfile
 import io
 
 from ultralytics import YOLO
+os.makedirs("models", exist_ok=True)
+os.makedirs("data", exist_ok=True)
 
 # ==========================================
 # CONFIGURACIÓN GLOBAL Y CIFRADO
 # ==========================================
-MODELO_YOLO = "yolov8n.pt"
+MODELO_YOLO = "models/yolov8n.pt"
 CAMARA_INDEX = 1
 ANCHO_CAM = 1920
 ALTO_CAM = 1080
@@ -52,7 +54,7 @@ OBJETOS_ALERTAS = {
     #"Señal de stop": 11,
     #"Parquímetro": 12,
     #"Banco": 13,
-    "Pájaro": 14,
+    #"Pájaro": 14,
     "Gato": 15,
     "Perro": 16,
     #"Caballo": 17,
@@ -79,10 +81,10 @@ OBJETOS_ALERTAS = {
     #"Raqueta de tenis": 38,
     "Botella": 39,
     #"Copa de vino": 40,
-    "Taza": 41,
-    "Tenedor": 42,
+    #"Taza": 41,
+    #"Tenedor": 42,
     "Cuchillo": 43,
-    "Cuchara": 44,
+    #"Cuchara": 44,
     #"Tazón": 45,
     #"Plátano": 46,
     #"Manzana": 47,
@@ -120,7 +122,7 @@ OBJETOS_ALERTAS = {
     #"Cepillo de dientes": 79
 }
 
-KEY_FILE = "secret.key"
+KEY_FILE = "data/secret.key"
 if not os.path.exists(KEY_FILE):
     key = Fernet.generate_key()
     with open(KEY_FILE, "wb") as f:
@@ -135,7 +137,7 @@ cipher_suite = Fernet(key)
 # GESTIÓN DE BASE DE DATOS
 # ==========================================
 def init_db():
-    conn = sqlite3.connect("incidentes.db")
+    conn = sqlite3.connect("data/incidentes.db")
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS incidentes 
                       (id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -148,7 +150,7 @@ def guardar_incidente_db(objeto, frame):
     try:
         _, buffer = cv2.imencode('.jpg', frame)
         img_encriptada = cipher_suite.encrypt(buffer.tobytes())
-        conn = sqlite3.connect("incidentes.db")
+        conn = sqlite3.connect("data/incidentes.db")
         cursor = conn.cursor()
         cursor.execute("INSERT INTO incidentes (fecha, objeto, imagen_cifrada) VALUES (?, ?, ?)",
                        (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), objeto, img_encriptada))
@@ -448,7 +450,7 @@ class SurveillanceDashboard(QMainWindow):
         self.lbl_gpu_info.setStyleSheet("color: #4caf50;")
         sidebar_layout.addWidget(self.lbl_gpu_info)
 
-        self.lbl_cam_info = QLabel(f"Res: {ANCHO_CAM}x{ALTO_CAM} @ 30fps")
+        self.lbl_cam_info = QLabel(f"Res: {ANCHO_CAM}x{ALTO_CAM} @ 60fps")
         sidebar_layout.addWidget(self.lbl_cam_info)
 
         self._add_separator(sidebar_layout)
@@ -652,7 +654,7 @@ class SurveillanceDashboard(QMainWindow):
 def exportar_reporte_pdf(filtro: str = "") -> str:
     """Genera un PDF con los incidentes de la DB y devuelve la ruta del archivo."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    ruta = f"reporte_incidentes_{timestamp}.pdf"
+    ruta = f"data/reporte_incidentes_{timestamp}.pdf"
 
     doc = SimpleDocTemplate(ruta, pagesize=letter,
                             leftMargin=0.75 * inch, rightMargin=0.75 * inch,
@@ -683,7 +685,7 @@ def exportar_reporte_pdf(filtro: str = "") -> str:
     story.append(Spacer(1, 14))
 
     # Resumen
-    conn = sqlite3.connect("incidentes.db")
+    conn = sqlite3.connect("data/incidentes.db")
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM incidentes")
     total = cursor.fetchone()[0]
@@ -836,7 +838,7 @@ class HistoryWindow(QWidget):
         try:
             filtro = self.search_bar.text()
             self.tabla.setRowCount(0)
-            conn = sqlite3.connect("incidentes.db")
+            conn = sqlite3.connect("data/incidentes.db")
             cursor = conn.cursor()
             query = ("SELECT id, fecha, objeto FROM incidentes "
                      "WHERE objeto LIKE ? OR fecha LIKE ? ORDER BY id DESC")
@@ -860,7 +862,7 @@ class HistoryWindow(QWidget):
             self, 'Confirmar', f'¿Eliminar registro {id_db}?',
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if confirm == QMessageBox.StandardButton.Yes:
-            conn = sqlite3.connect("incidentes.db")
+            conn = sqlite3.connect("data/incidentes.db")
             cursor = conn.cursor()
             cursor.execute("DELETE FROM incidentes WHERE id = ?", (id_db,))
             conn.commit()
@@ -873,7 +875,7 @@ class HistoryWindow(QWidget):
             self, 'Confirmar', '¿Vaciar base de datos?',
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if reply == QMessageBox.StandardButton.Yes:
-            conn = sqlite3.connect("incidentes.db")
+            conn = sqlite3.connect("data/incidentes.db")
             cursor = conn.cursor()
             cursor.execute("DELETE FROM incidentes")
             conn.commit()
@@ -895,7 +897,7 @@ class HistoryWindow(QWidget):
     def ver_imagen(self, item):
         try:
             id_db = self.tabla.item(item.row(), 0).text()
-            conn = sqlite3.connect("incidentes.db")
+            conn = sqlite3.connect("data/incidentes.db")
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT imagen_cifrada FROM incidentes WHERE id = ?", (id_db,))

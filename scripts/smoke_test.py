@@ -62,12 +62,12 @@ check("Modelo yolov8n.pt", check_model)
 # Cámara
 def check_camera():
     import cv2, sys
-    sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent.parent))
+    sys.path.insert(1, str(__import__("pathlib").Path(__file__).parent.parent))
     try:
         import config
         idx = config.CAMERA_INDEX
     except Exception:
-        idx = 0
+        idx = 1
     cap = cv2.VideoCapture(idx)
     if not cap.isOpened():
         raise RuntimeError(f"No se pudo abrir la cámara (índice {idx}) — verificar conexión y config.py")

@@ -292,7 +292,6 @@ Ver documento técnico (`docs/`) para métricas detalladas, condiciones de medic
 | Ángel Antonio Ramírez Gutiérrez  |
 
 **Contacto principal:** *angelramirez230385@gmail.com*
-**Repositorio:** https://github.com/AngelAntonio375/dacer
 **Video de demostración:** *(link por confirmar)*
 
 ---

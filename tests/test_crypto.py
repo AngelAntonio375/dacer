@@ -5,8 +5,7 @@ Verifica que el cifrado y descifrado sean correctos y que la clave persiste.
 """
 
 import pytest
-import os
-import tempfile
+from pathlib import Path
 from cryptography.fernet import Fernet
 
 
@@ -28,17 +27,18 @@ class TestCifradoFernet:
     def test_key_file_se_crea(self, tmp_path, monkeypatch):
         """Si no existe secret.key, debe crearse automáticamente."""
         import src.crypto as crypto_module
-        key_path = str(tmp_path / "test.key")
+        key_path = tmp_path / "test.key"
+        monkeypatch.setattr(crypto_module, "DATA_DIR", tmp_path)
         monkeypatch.setattr(crypto_module, "KEY_FILE", key_path)
-        # Re-ejecutar la función de carga
         key = crypto_module._load_or_create_key()
-        assert os.path.exists(key_path)
+        assert key_path.exists()
         assert len(key) > 0
 
     def test_key_file_se_reutiliza(self, tmp_path, monkeypatch):
         """La misma clave debe usarse si el archivo ya existe."""
         import src.crypto as crypto_module
-        key_path = str(tmp_path / "test2.key")
+        key_path = tmp_path / "test2.key"
+        monkeypatch.setattr(crypto_module, "DATA_DIR", tmp_path)
         monkeypatch.setattr(crypto_module, "KEY_FILE", key_path)
         key1 = crypto_module._load_or_create_key()
         key2 = crypto_module._load_or_create_key()

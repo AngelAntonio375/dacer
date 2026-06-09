@@ -3,12 +3,18 @@ src/database.py
 Gestión de la base de datos SQLite de incidentes.
 Todas las imágenes se almacenan cifradas con Fernet.
 """
-
+import os
 import sqlite3
 from datetime import datetime
+from pathlib import Path
 from src.crypto import cipher_suite
 
-DB_PATH = "incidentes.db"
+# Raíz del proyecto = carpeta padre de /src
+ROOT_DIR = Path(__file__).parent.parent
+DATA_DIR = ROOT_DIR / "data"
+DB_PATH = DATA_DIR / "incidentes.db"
+
+DATA_DIR.mkdir(exist_ok=True)
 
 
 def init_db() -> None:
@@ -27,16 +33,6 @@ def init_db() -> None:
 
 
 def guardar_incidente(objeto: str, frame_jpg_bytes: bytes) -> bool:
-    """
-    Cifra el frame JPG y lo persiste en la base de datos.
-
-    Args:
-        objeto: Nombre del objeto detectado (ej. "Cuchillo").
-        frame_jpg_bytes: Bytes del frame codificado como JPEG.
-
-    Returns:
-        True si el guardado fue exitoso, False en caso de error.
-    """
     try:
         img_cifrada = cipher_suite.encrypt(frame_jpg_bytes)
         conn = sqlite3.connect(DB_PATH)
@@ -54,15 +50,6 @@ def guardar_incidente(objeto: str, frame_jpg_bytes: bytes) -> bool:
 
 
 def obtener_incidentes(filtro: str = "") -> list[tuple]:
-    """
-    Devuelve incidentes filtrados por objeto o fecha.
-
-    Args:
-        filtro: Cadena de búsqueda (vacía = todos).
-
-    Returns:
-        Lista de tuplas (id, fecha, objeto).
-    """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute(
@@ -76,15 +63,6 @@ def obtener_incidentes(filtro: str = "") -> list[tuple]:
 
 
 def obtener_imagen_incidente(incidente_id: int) -> bytes | None:
-    """
-    Devuelve la imagen descifrada de un incidente, o None si no existe.
-
-    Args:
-        incidente_id: ID del incidente en la base de datos.
-
-    Returns:
-        Bytes de la imagen JPEG descifrada, o None.
-    """
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
@@ -101,22 +79,32 @@ def obtener_imagen_incidente(incidente_id: int) -> bytes | None:
         return None
 
 
-def eliminar_incidente(incidente_id: int) -> None:
+def eliminar_incidente(incidente_id: int) -> bool:
     """Elimina un incidente por ID."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM incidentes WHERE id = ?", (incidente_id,))
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM incidentes WHERE id = ?", (incidente_id,))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as exc:
+        print(f"[database] Error al eliminar incidente: {exc}")
+        return False
 
 
-def vaciar_base_de_datos() -> None:
+def vaciar_base_de_datos() -> bool:
     """Elimina todos los incidentes de la base de datos."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM incidentes")
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM incidentes")
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as exc:
+        print(f"[database] Error al vaciar la base de datos: {exc}")
+        return False
 
 
 def contar_incidentes() -> int:

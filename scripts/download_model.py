@@ -3,11 +3,14 @@ download_model.py
 Descarga el modelo YOLOv8n desde los servidores de Ultralytics.
 Uso: python scripts/download_model.py
 """
-
+import os
 import sys
+import shutil
 from pathlib import Path
 
-MODELS_DIR = Path(__file__).parent.parent / "models"
+# Raíz del proyecto = carpeta padre de /scripts
+ROOT_DIR = Path(__file__).parent.parent
+MODELS_DIR = ROOT_DIR / "models"
 MODEL_PATH = MODELS_DIR / "yolov8n.pt"
 
 
@@ -22,19 +25,33 @@ def download_model():
 
     try:
         from ultralytics import YOLO
-        model = YOLO("yolov8n.pt")
-        import shutil
-        yolo_cache = Path.home() / ".cache" / "ultralytics" / "assets" / "yolov8n.pt"
-        if yolo_cache.exists():
-            shutil.copy(yolo_cache, MODEL_PATH)
-            print(f"[OK] Modelo guardado en: {MODEL_PATH}")
-        else:
-            model_path = Path("yolov8n.pt")
-            if model_path.exists():
-                shutil.move(str(model_path), MODEL_PATH)
+
+        # Ultralytics descarga el modelo al directorio de trabajo actual
+        original_cwd = Path.cwd()
+        os.chdir(ROOT_DIR)  # Cambiamos al root para controlar dónde cae el archivo
+
+        model = YOLO("yolov8n.pt")  # Si no existe, lo descarga aquí
+
+        os.chdir(original_cwd)  # Restauramos el directorio de trabajo
+
+        # Posibles rutas donde Ultralytics pudo haber dejado el archivo
+        candidates = [
+            ROOT_DIR / "yolov8n.pt",
+            Path.cwd() / "yolov8n.pt",
+            Path.home() / ".cache" / "ultralytics" / "assets" / "yolov8n.pt",
+        ]
+
+        for candidate in candidates:
+            if candidate.exists() and candidate != MODEL_PATH:
+                shutil.move(str(candidate), MODEL_PATH)
                 print(f"[OK] Modelo guardado en: {MODEL_PATH}")
-            else:
-                print(f"[INFO] Modelo descargado por Ultralytics. Mover manualmente a: {MODEL_PATH}")
+                return
+
+        if MODEL_PATH.exists():
+            print(f"[OK] Modelo ya disponible en: {MODEL_PATH}")
+        else:
+            print(f"[WARN] No se encontró el archivo descargado. Mover manualmente a: {MODEL_PATH}")
+
     except ImportError:
         print("[ERROR] Ultralytics no está instalado. Ejecutar: pip install ultralytics")
         sys.exit(1)

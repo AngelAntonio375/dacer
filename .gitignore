@@ -2,9 +2,9 @@
 venv/
 .venv/
 env/
-secret.key
+data/secret.key
 *.key
-incidentes.db
+data/incidentes.db
 *.db
 *.pt
 
