@@ -301,3 +301,9 @@ Ver documento técnico (`docs/`) para métricas detalladas, condiciones de medic
 Este proyecto se distribuye bajo la licencia MIT. Ver archivo [LICENSE](LICENSE) para el texto completo.
 
 El modelo YOLOv8n (`yolov8n.pt`) se distribuye bajo licencia AGPL-3.0 por Ultralytics. Su uso en este proyecto es conforme a dicha licencia.
+
+## Dedicatoria
+
+Agradecer a Naty, por todo lo que es, por que ella me impulsa cada dia, por que admiro cada cosa de ella y la quiero en cuerpo y alma <3
+    
+**- A.A.**
